@@ -1,5 +1,6 @@
 attrs==20.3.0
 chardet==3.0.4
+coverage==5.3
 iniconfig==1.1.1
 packaging==20.7
 pdfminer.six==20200517
