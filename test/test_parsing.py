@@ -1,6 +1,8 @@
 import os
 import pytest
 
+import library
+from library.dir_helper import get_all_paths_from_file
 import parse_pdfs
 
 test_dir = os.path.dirname(__file__)
@@ -54,7 +56,7 @@ def remove_input_path_files():
 
 def setup_module():
     create_input_path_files()
-    parse_pdfs.logger = parse_pdfs.get_logger()
+    parse_pdfs.logger = library.get_logger("parse_pdfs")
 
 
 def teardown_module():
@@ -72,7 +74,7 @@ def teardown_module():
     ]
 )
 def test_get_all_paths_from_file(input_file, walk_dirs, expected_files):
-    paths = parse_pdfs.get_all_paths_from_file(os.path.join(input_files_dir, input_file), walk_dirs)
+    paths = get_all_paths_from_file(os.path.join(input_files_dir, input_file), walk_dirs)
     assert set(paths) == set(expected_files)
 
 
@@ -103,3 +105,10 @@ def test_get_claim_from_pdf(pdf_path, expected_claim_code):
 def test_parse_pdfs(input_file, walk_dirs, expected_claim_codes):
     codes = parse_pdfs.parse_pdfs(os.path.join(input_files_dir, input_file), walk_dirs)
     assert set(codes) == set(expected_claim_codes)
+
+
+def test_parse_args():
+    args = parse_pdfs.parse_args([input_file_000, '-w', '-d'])
+    assert args.input_file == input_file_000
+    assert args.walk_dirs
+    assert args.debug
