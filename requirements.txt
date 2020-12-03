@@ -1,8 +1,16 @@
+attrs==20.3.0
 chardet==3.0.4
+iniconfig==1.1.1
+packaging==20.7
 pdfminer.six==20200517
 pdfplumber==0.5.24
 Pillow==8.0.1
 pkg-resources==0.0.0
+pluggy==0.13.1
+py==1.9.0
 pycryptodome==3.9.9
+pyparsing==2.4.7
+pytest==6.1.2
 sortedcontainers==2.3.0
+toml==0.10.2
 Wand==0.6.5

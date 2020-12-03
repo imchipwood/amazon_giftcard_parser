@@ -3,8 +3,11 @@ import json
 import logging
 import os
 import pdfplumber
+from pdfminer.pdfparser import PDFSyntaxError
 import re
 from typing import List
+
+global logger  # type: logging.Logger
 
 
 def parse_args() -> argparse.Namespace:
@@ -12,12 +15,10 @@ def parse_args() -> argparse.Namespace:
         description="Python 3.x Amazon Print-At-Home Gift Card parser - extracts claim codes"
     )
     parser.add_argument(
-        "-i",
-        "--input_file",
+        "input_file",
         type=str,
-        help="Optional input file path. Input file should have paths to directories with PDFs in them, "
-             "or direct paths to PDFS",
-        default="paths.txt"
+        help="input file path. Input file should have paths to directories with PDFs in them, "
+             "or direct paths to PDFS"
     )
     parser.add_argument(
         "-w",
@@ -100,57 +101,87 @@ def _walk_path(path: str, walk: bool = False) -> List[str]:
     return actual_paths
 
 
-def get_claim_from_pdf(pdf_path: str) -> str:
+def get_claim_from_pdf(pdf_path: str) -> str or None:
     """
-
+    Parse PDF for claim number
     @param pdf_path: path to PDF file
     @type pdf_path: str
     @return: claim code from PDF
-    @rtype: str
+    @rtype: str or None
     """
-    claim_code = ""
-    with pdfplumber.open(pdf_path) as pdf:
-        first_page = pdf.pages[0]
-        page = first_page.find_tables()[0].page
-        text = page.extract_text().split("\n")
-        for i, line in enumerate(text):
-            if re.search(r"claim code", line, re.I):
-                claim_code = text[i + 1].strip()
-                break
-    return claim_code
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            first_page = pdf.pages[0]
+
+            tables = first_page.find_tables()
+            if not tables:
+                logger.warning(f"Couldn't find tables for {pdf_path}")
+                return None
+
+            page = tables[0].page
+            text = page.extract_text().split("\n")
+
+            line_number = -1
+            for i, line in enumerate(text):
+                if re.search(r"claim code", line, re.I):
+                    line_number = i + 1
+                    break
+
+            if line_number >= 0:
+                return text[line_number].strip()
+
+            logger.warning(f"Failed to find claim code for {pdf_path}")
+            return None
+
+    except PDFSyntaxError as e:
+        logger.exception(f"Failed to parse {pdf_path}")
+        return None
 
 
 def get_logger(debug: bool = False) -> logging.Logger:
-
+    """
+    Set up loggers
+    @param debug: flag to enable debug prints
+    @type debug: bool
+    @return: logger to use
+    @rtype: logging.Logger
+    """
     debug_level = logging.DEBUG if debug else logging.INFO
-    logger = logging.getLogger(__name__)
+    new_logger = logging.getLogger(__name__)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(debug_level)
     stdout_format = "[%(asctime)s] %(name)s - %(levelname)s - %(message)s"
     stdout_formatter = logging.Formatter(stdout_format)
     stream_handler.setFormatter(stdout_formatter)
-    logger.handlers = []
-    logger.addHandler(stream_handler)
-    logger.propagate = False
+    new_logger.handlers = []
+    new_logger.addHandler(stream_handler)
+    new_logger.propagate = False
 
     pdf_logger = logging.getLogger(pdfplumber.__name__)
     pdf_logger.setLevel(logging.WARN)
     pdf_logger.propagate = False
 
-    logger.setLevel(debug_level)
+    new_logger.setLevel(debug_level)
 
-    return logger
+    return new_logger
 
 
-def main(args: argparse.Namespace):
+def parse_pdfs(input_file: str, walk_dirs: bool = False, debug: bool = False) -> List[str]:
     """
-
-    @param args: commandline arguments
-    @type args: argparse.Namespace
+    Parse the PDFs and print the results
+    @param input_file: path to input file with PDF paths/directories
+    @type input_file: str
+    @param walk_dirs: Enable parsing inner directories
+    @type walk_dirs: bool
+    @param debug: Enable verbose logging
+    @type debug: bool
+    @return: list of codes
+    @rtype: list[str]
     """
-    logger = get_logger(args.debug)
+    global logger
+    logger = get_logger(debug)
 
-    pdfs = get_all_paths_from_file(args.input_file, args.walk_dirs)
+    pdfs = get_all_paths_from_file(input_file, walk_dirs)
 
     num_pdfs = len(pdfs)
     logger.info(f"Found {num_pdfs} PDFs")
@@ -159,11 +190,19 @@ def main(args: argparse.Namespace):
     codes = []
     for i, pdf in enumerate(pdfs):
         logger.info(f"reading pdf {i + 1}/{num_pdfs}")
-        codes.append(get_claim_from_pdf(pdf))
+        code = get_claim_from_pdf(pdf)
+        if code:
+            codes.append(code)
 
-    raw_codes = "Codes:\n" + "\n".join(codes)
+    raw_codes = "Codes:\n" + "\n".join(codes) + "\n"
     logger.info(raw_codes)
+    num_codes = len(codes)
+    if num_codes != num_pdfs:
+        missing = num_pdfs - num_codes
+        logger.warning(f"Failed to parse {missing} PDFs! See logs for details")
+    return codes
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    args = parse_args()
+    parse_pdfs(args.input_file, args.walk_dirs, args.debug)

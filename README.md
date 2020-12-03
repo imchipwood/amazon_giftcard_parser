@@ -2,20 +2,52 @@
 
 Extracts out claim codes from Amazon gift card PDFs
 
-## Usage
+# Requirements
 
-### --input_file/-i
+Only requires Python3 (tested on Python3.8) and the `pdfplumber` package.
 
-Optional path to text file with directories and/or paths to PDF files. If not provided, looks for file named "paths.txt"
-in the main directory
 
-### --walk_dirs/-w
+## Install required packages using pip
 
-Enables recursively walking directories to find more PDFs
+Using a virtual environment is recommended:
 
-### --debug/-d
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-Enable verbose logging
+
+# Usage
+
+PDFs must be available on some local drive. The easiest method is to simply put them 
+all in a single folder, but you can provide multiple directories or paths 
+through an input file.
+
+Example:
+```bash
+# standard mode
+/path/to/your/venv/bin/python /path/to/amazon_gc_claim/main.py /path/to/input_file.txt
+# walk inner directories
+/path/to/your/venv/bin/python /path/to/amazon_gc_claim/main.py /path/to/input_file.txt -w
+# enable verbose logging
+/path/to/your/venv/bin/python /path/to/amazon_gc_claim/main.py /path/to/input_file.txt -d
+```
+
+## Command Line Arguments
+
+### `input_file`
+
+Path to text file with directories and/or paths to PDF files.
+
+### `--walk_dirs` or `-w`
+
+(Optional) Enables recursively walking directories to find more PDFs. 
+If not enabled, will not walk inner directories.
+
+### `--debug` or `-d`
+
+(Optional) Enable verbose logging
 
 ## Input File Format
 
