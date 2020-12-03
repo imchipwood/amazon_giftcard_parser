@@ -1,0 +1,6 @@
+**.pyc
+venv
+.idea/workspace.xml
+.idea/misc.xml
+.idea/*CACHE*
+.idea/dataSources.xml
