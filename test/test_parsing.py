@@ -25,8 +25,9 @@ input_files = {
     ],
     input_file_002: [
         "#" + os.path.join(base_path, "real_pdf_000.pdf"),
-        os.path.join(base_path, "dir2", "real_pdf_002.pdf")
-    ],
+        os.path.join(base_path, "dir2", "real_pdf_002.pdf"),
+        os.path.join(base_path, "dir2", "nonexistent_pdf_000.pdf")
+    ]
 }
 
 real_pdf_path_000 = os.path.join(base_path, "real_pdf_000.pdf")
