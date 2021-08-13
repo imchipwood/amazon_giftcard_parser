@@ -2,6 +2,7 @@
 data_file = reports/.coverage
 include =
     ./parse_pdfs.py
+    ./library/*
 
 [report]
 exclude_lines =
